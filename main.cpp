@@ -11,7 +11,7 @@ int main(int argc, char* argv[]) {
         std::ifstream file(argv[1]);
         if (file) {
             while (getline(file, token, '\t')) {
-                if (token[0] != '.') {
+                if (token[0] != '.' && token != "") {
                     std::cout << token << std::endl;
                 }
             }
