@@ -16,7 +16,7 @@ int main(int argc, char* argv[]) {
                 if (currentLine[0] != '.' && currentLine != "") {
                     std::stringstream lineStream(currentLine);
                     while (getline(lineStream, token, '\t')) {
-                        if (token[0] != '.' && token != "") {
+                        if (token[0] != '.') {
                             std::cout << token << std::endl;
                         }
                     }
