@@ -2,8 +2,12 @@
 #include <fstream>
 #include <string>
 #include <sstream>
+#include <memory>
+#include "op_table.h"
 
 int main(int argc, char* argv[]) {
+    std::unique_ptr<OpTable> const table (new OpTable);
+
     if (argc <= 1) {
         throw std::invalid_argument("No file was specified.");
     }
