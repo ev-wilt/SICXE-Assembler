@@ -64,7 +64,7 @@ class OpTable {
             {"TIO", std::make_pair(0xF8, "1")},
             {"TIX", std::make_pair(0x2C, "3/4")},
             {"TIXR", std::make_pair(0xB8, "2")},
-            {"WD", std::make_pair(0xDC, "3/4")},
+            {"WD", std::make_pair(0xDC, "3/4")}
         };
     
 };
