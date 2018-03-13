@@ -12,7 +12,7 @@ int main(int argc, char* argv[]) {
         std::string token = "";
         std::ifstream file(argv[1]);
         if (file) {
-            while (getline(file, currentLine, '\n')) {
+            while (getline(file, currentLine)) {
                 if (currentLine[0] != '.' && currentLine != "") {
                     std::stringstream lineStream(currentLine);
                     while (getline(lineStream, token, '\t')) {
