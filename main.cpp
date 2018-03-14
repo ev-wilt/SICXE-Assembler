@@ -24,7 +24,7 @@ int main(int argc, char* argv[]) {
 
                     while (getline(lineStream, token, '\t')) {
                         if (token[0] != '.') {
-                            iter = inputVector.insert(iter, token);
+                            inputVector.push_back(token);
                         }
                     }
                 }
