@@ -11,26 +11,23 @@ struct opTable{
     char opcode [2];
     int format;
 };
-
 opTable object[60];
 
-struct symtab_s{
+struct Symtab{
     char label[10];
-    char loc[10];
+    int loc;
     char value[10];
 };
+Symtab sym[100];
 
-//symtab sym[100];
-
-struct assembly_s{
+struct Assembly{
     char label [10];
     char mnemonic[10];
-    char operand[10];
-    char location[5];
+    std::string operand[10];
+    int location;
     char objCode[8];
 };
-
-//assembly assem[100];
+Assembly assem[100];
 
 void createOpTable(){
     strcpy(object[0].mnemonic, "WD");
@@ -275,23 +272,62 @@ void fileReader(){
     opTable["ADD"] = 3;
     std::string currentLine = "";
     std::string token = "";
+    int pc = 0;
+    int assemblyLine=0;
+
     std::ifstream file("basic.txt");   //edit file name here!
     if (file){
         while (getline(file, currentLine, '\n')){
             if (currentLine[0] != '.' && currentLine != "") {
                 std::stringstream lineStream(currentLine);
+                bool isOPcode = false;
+                bool isLabel = false;
+                bool isDirective = false;
                 while (getline(lineStream, token, '\t')) {
                     if (token[0] != '.' && token != "") {
-                             std::cout << token + "\n";
-                        for( int i = 0; i < 1000; i++){
+                    //    std::cout << token + "\n";
+                    /* if we know we have taken in an opcode
+                        or directive already the last token
+                        must be a operator */
+                        if(isOPcode == true || isDirective == true) {
+                            //assem[assemblyLine].operand = token;
+                            std::cout << token + " is an operand field" << std::endl;
+                        }
+                        for( int i = 0; i < 60; i++){
                             if(token == object[i].mnemonic){
+                                isOPcode = true;
                                 std::cout << token + " belongs to OpTable!" << std::endl;
                             }
+                        }
+                        if(token == "WORD"){
+                            isDirective = true;
+                            std::cout << token + " is a directive!" << std::endl;
+                        }
+                        if(token == "RESW"){
+                            isDirective = true;
+                            std::cout << token + " is a directive!" << std::endl;
+                        }
+                        if(token == "RESB"){
+                            isDirective = true;
+                            std::cout << token + " is a directive!" << std::endl;
+                        }
+                        if(token == "BYTE"){
+                            isDirective = true;
+                            std::cout << token + " is a directive!" << std::endl;
+                        }
+
+                        /* if their is no OPCode for the current line and their is no
+                            directives for the current line, then the token must be
+                            a label! */
+                        if(isOPcode == false && isDirective ==false) {
+                            isLabel = true;
+                            std::cout << token + " belongs to SymTable!" << std::endl;
                         }
                     }
                 }
             }
-            std::cout << "end of line \n\n";
+            std::cout << "\n\n";
+            assemblyLine = assemblyLine + 1;
         }
     }
     else {
@@ -299,9 +335,13 @@ void fileReader(){
     }
 }
 
+void output(){
+}
+
 int main(){
     createOpTable();
     fileReader();
+    output();
     return 0;
 }
 
