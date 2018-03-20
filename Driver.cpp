@@ -275,7 +275,7 @@ void fileReader(){
     int pc = 0;
     int assemblyLine=0;
 
-    std::ifstream file("basic.txt");   //edit file name here!
+    std::ifstream file("literals.txt");   //edit file name here!
     if (file){
         while (getline(file, currentLine, '\n')){
             if (currentLine[0] != '.' && currentLine != "") {
@@ -286,45 +286,66 @@ void fileReader(){
                 std::cout << "Line number is : " << assemblyLine << std::endl;
                 while (getline(lineStream, token, '\t')) {
                     if (token[0] != '.' && token != "") {
-                    //    std::cout << token + "\n";
-                    /* if we know we have taken in an opcode
-                        or directive already the last token
-                        must be a operator */
-                        if(isOPcode == true || isDirective == true) {
-                            //assem[assemblyLine].operand = token;
-                            std::cout << token + " is an operand field" << std::endl;
-                        }
-                        for( int i = 0; i < 60; i++){
-                            if(token == object[i].mnemonic){
+                        if (token[0] == '+'){
+                            std::cout << "extended mode!!" << std::endl;
+                            token.erase (token.begin());
+                            for( int k = 0; k < 60; k++){
+                                if(token == object[k].mnemonic){
                                 isOPcode = true;
                                 std::cout << token + " belongs to OpTable!" << std::endl;
+                                }
+                            }
+                        }else{
+                        //    std::cout << token + "\n";
+                            /* if we know we have taken in an opcode
+                            or directive already the last token
+                            must be a operator */
+                            if(isOPcode == true || isDirective == true) {
+                                //assem[assemblyLine].operand = token;
+                                std::cout << token + " is an operand field" << std::endl;
+
+                            }
+                            for( int i = 0; i < 60; i++){
+                                if(token == object[i].mnemonic){
+                                isOPcode = true;
+                                std::cout << token + " belongs to OpTable!" << std::endl;
+                                }
+                            }
+                            if(token == "WORD"){
+                                isDirective = true;
+                                std::cout << token + " is a directive!" << std::endl;
+                            }
+                            if(token == "RESW"){
+                                isDirective = true;
+                                std::cout << token + " is a directive!" << std::endl;
+                            }
+                            if(token == "RESB"){
+                                isDirective = true;
+                                std::cout << token + " is a directive!" << std::endl;
+                            }
+                            if(token == "BYTE"){
+                                isDirective = true;
+                                std::cout << token + " is a directive!" << std::endl;
+                            }
+                            if(token == "BASE"){
+                                isDirective = true;
+                                std::cout << token + " is a directive!" << std::endl;
+                            }
+                            if(token == "EQU"){
+                                isDirective = true;
+                                std::cout << token + " is a directive!" << std::endl;
+                            }
+
+                            /* if their is no OPCode for the current line and their is no
+                                directives for the current line, then the token must be
+                                a label! */
+                            if(isOPcode == false && isDirective == false) {
+                                isLabel = true;
+                                std::cout << token + " belongs to SymTable!" << std::endl;
                             }
                         }
-                        if(token == "WORD"){
-                            isDirective = true;
-                            std::cout << token + " is a directive!" << std::endl;
-                        }
-                        if(token == "RESW"){
-                            isDirective = true;
-                            std::cout << token + " is a directive!" << std::endl;
-                        }
-                        if(token == "RESB"){
-                            isDirective = true;
-                            std::cout << token + " is a directive!" << std::endl;
-                        }
-                        if(token == "BYTE"){
-                            isDirective = true;
-                            std::cout << token + " is a directive!" << std::endl;
-                        }
-
-                        /* if their is no OPCode for the current line and their is no
-                            directives for the current line, then the token must be
-                            a label! */
-                        if(isOPcode == false && isDirective ==false) {
-                            isLabel = true;
-                            std::cout << token + " belongs to SymTable!" << std::endl;
-                        }
                     }
+
                 }
             }
             std::cout << "\n\n";
@@ -345,5 +366,3 @@ int main(){
     output();
     return 0;
 }
-
-
