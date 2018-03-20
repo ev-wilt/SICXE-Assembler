@@ -283,6 +283,7 @@ void fileReader(){
                 bool isOPcode = false;
                 bool isLabel = false;
                 bool isDirective = false;
+                std::cout << "Line number is : " << assemblyLine << std::endl;
                 while (getline(lineStream, token, '\t')) {
                     if (token[0] != '.' && token != "") {
                     //    std::cout << token + "\n";
