@@ -7,4 +7,5 @@ add_executable(
     SICXE-Assembler 
     main.cpp 
     op_table.cpp
+    sym_table.cpp
     )
