@@ -1,5 +1,6 @@
-cmake_minimum_required(VERSION 3.5)
-set (CMAKE_CXX_STANDARD 11)
+cmake_minimum_required(VERSION 2.8)
+add_compile_options(-std=c++11)
+
 project(SICXE-Assembler)
 
 add_executable(
