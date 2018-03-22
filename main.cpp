@@ -42,8 +42,11 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
 
         if (currentOpcode[0] == '+') {
             std::string trimmedOpcode(currentOpcode.substr(1));
-            if (opTable->isInOpTable(trimmedOpcode)) {
+            if (opTable->isInOpTable(trimmedOpcode) && opTable->getFormat(trimmedOpcode) == 3) {
                 locCounter += 4;
+            }
+            else {
+                throw  std::invalid_argument("Opcode" + trimmedOpcode + " was not in OPTAB, or had a + and wasn't a 3 format instruction.");
             }
         }
         else if (opTable->isInOpTable(currentOpcode)) {
@@ -61,8 +64,24 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
             locCounter += std::stoi(currentOperand);
         }
         else if (currentOpcode == "BYTE") {
-            // TODO: Find length of constant in bytes
             int constLength = 0;
+            std::string trimmedOperand = currentOperand;
+
+            trimmedOperand.erase(0, 2);
+            trimmedOperand.erase(trimmedOperand.length() - 1, 1);
+            if (currentOperand[0] == 'X') {
+                for (int i = 0; i < trimmedOperand.length(); ++i) {
+                    if (i % 2 == 0) {
+                        constLength += 1;  
+                    }
+                }
+            }
+
+            else if (currentOperand[0] == 'C') {
+                for (int i = 0; i < trimmedOperand.length(); ++i) {
+                    constLength += 1;  
+                }
+            }
             locCounter += constLength;
         }
         else if (currentOpcode == "BASE") {
@@ -81,9 +100,8 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
         currentOperand = input[lineIter + 2];
     }
 
-    std::cout << std::setfill('0') << std::setw(4) << std::hex << locCounter << std::endl;
     programLength = locCounter - startAddress;
-    std::cout << "Program Length: " << programLength;
+    std::cout << "Program Length: " << programLength << std::endl;
 }
 
 int main(int argc, char* argv[]) {
