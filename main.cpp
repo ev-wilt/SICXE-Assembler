@@ -1,4 +1,5 @@
 #include <iostream>
+#include <iomanip>
 #include <fstream>
 #include <string>
 #include <sstream>
@@ -9,31 +10,80 @@
 
 /*
     Implementation of the first pass algorithm. 
-    When iterating through the input vector:
-    i = current label
-    i + 1 = current opcode
-    i + 2 = current operand
 */
-void passOne(std::vector<std::string> & input, std::unique_ptr<OpTable> & optTable, std::unique_ptr<SymTable> & symTable) {
+void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable, std::unique_ptr<SymTable>& symTable) {
+    std::string currentLabel = input[0];
+    std::string currentOpcode = input[1];
+    std::string currentOperand = input[2];
+    int locCounter = 0;
+    int programLength = 0;
+    int startAddress = 0;
+    int lineIter = 0;
 
-    for (int i = 0; i < input.size(); i += 3) {
-        int locCounter = 0;
-
-        if (input[i + 1] == "START") {
-            locCounter = std::stoi(input[i+2], nullptr, 16);
-            // TODO: Write line to intermediate file
-            std::cout << locCounter << std::endl;
-        }
-
-        if (input[i + 1] != "END") {
-            if (input[i] != "") {
-                if (symTable->insertSymbol == false) {
-                    throw  std::invalid_argument("Symbol in memory location" + std::to_string(locCounter) + "was already in SYMTAB.");
-                }
-            }
-
-        }
+    std::cout << "LOCCTR:" << std::endl;
+    if (currentOpcode == "START") {
+        locCounter = std::stoi(currentOperand, nullptr, 16);
+        startAddress = locCounter;
+        // TODO: Write line to intermediate file
+        std::cout << std::setfill('0') << std::setw(4) << std::hex << locCounter << std::endl;
+        lineIter += 3;
+        currentLabel = input[lineIter];
+        currentOpcode = input[lineIter + 1];
+        currentOperand = input[lineIter + 2];
     }
+
+    while (currentOpcode != "END" && lineIter < input.size()) {
+
+        if (currentLabel != "") {
+            if (symTable->insertSymbol(currentLabel, locCounter) == false) {
+                throw  std::invalid_argument("Symbol" + currentLabel + " was already in SYMTAB.");
+            }
+        }
+
+        if (currentOpcode[0] == '+') {
+            std::string trimmedOpcode(currentOpcode.substr(1));
+            if (opTable->isInOpTable(trimmedOpcode)) {
+                locCounter += 4;
+            }
+        }
+        else if (opTable->isInOpTable(currentOpcode)) {
+            locCounter += opTable->getFormat(currentOpcode);
+        }
+        else if (currentOpcode == "WORD") {
+            locCounter += 3;  
+        }
+        else if (currentOpcode == "RESW") {
+            // TODO: Make sure operands are in base 10
+            locCounter += 3 * std::stoi(currentOperand);
+        }
+        else if (currentOpcode == "RESB") {
+            // TODO: Make sure operands are in base 10
+            locCounter += std::stoi(currentOperand);
+        }
+        else if (currentOpcode == "BYTE") {
+            // TODO: Find length of constant in bytes
+            int constLength = 0;
+            locCounter += constLength;
+        }
+        else if (currentOpcode == "BASE") {
+            locCounter = locCounter;
+        }
+        else {
+            throw  std::invalid_argument("OpCode " + currentOpcode + " was not in OPTAB.");
+        }
+
+        // TODO: Write line to intermediate file
+        std::cout << std::setfill('0') << std::setw(4) << std::hex << locCounter << std::endl;
+
+        lineIter += 3;
+        currentLabel = input[lineIter];
+        currentOpcode = input[lineIter + 1];
+        currentOperand = input[lineIter + 2];
+    }
+
+    std::cout << std::setfill('0') << std::setw(4) << std::hex << locCounter << std::endl;
+    programLength = locCounter - startAddress;
+    std::cout << "Program Length: " << programLength;
 }
 
 int main(int argc, char* argv[]) {

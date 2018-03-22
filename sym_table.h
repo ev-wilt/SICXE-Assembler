@@ -7,7 +7,6 @@ class SymTable {
     
     private:
         std::map<std::string, int> symTable = {
-            {"EOF", 1}
         };
     
 };
