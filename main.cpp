@@ -56,11 +56,9 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
             locCounter += 3;  
         }
         else if (currentOpcode == "RESW") {
-            // TODO: Make sure operands are in base 10
             locCounter += 3 * std::stoi(currentOperand);
         }
         else if (currentOpcode == "RESB") {
-            // TODO: Make sure operands are in base 10
             locCounter += std::stoi(currentOperand);
         }
         else if (currentOpcode == "BYTE") {
@@ -70,7 +68,7 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
             trimmedOperand.erase(0, 2);
             trimmedOperand.erase(trimmedOperand.length() - 1, 1);
             if (currentOperand[0] == 'X') {
-                for (int i = 0; i < trimmedOperand.length(); ++i) {
+                for (int i : trimmedOperand) {
                     if (i % 2 == 0) {
                         constLength += 1;  
                     }
@@ -78,7 +76,7 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
             }
 
             else if (currentOperand[0] == 'C') {
-                for (int i = 0; i < trimmedOperand.length(); ++i) {
+                for (int i : trimmedOperand) {
                     constLength += 1;  
                 }
             }
@@ -86,6 +84,13 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
         }
         else if (currentOpcode == "BASE") {
             locCounter = locCounter;
+        }
+        else if (currentOpcode == "LTORG") {
+            locCounter = locCounter;
+        }
+        else if (currentOpcode == "EQU") {
+            // TODO: Parse equations
+            symTable->insertSymbol(currentLabel, locCounter);
         }
         else {
             throw  std::invalid_argument("OpCode " + currentOpcode + " was not in OPTAB.");
@@ -101,7 +106,7 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
     }
 
     programLength = locCounter - startAddress;
-    std::cout << "Program Length: " << programLength << std::endl;
+    std::cout << "Program Length: " << std::setfill('0') << std::setw(4) << std::hex << programLength << std::endl;
 }
 
 int main(int argc, char* argv[]) {
