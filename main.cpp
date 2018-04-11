@@ -35,7 +35,7 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
     while (currentOpcode != "END" && lineIter < input.size()) {
 
         if (currentLabel != "") {
-            if (symTable->insertSymbol(currentLabel, locCounter) == false) {
+            if (symTable->insertSymbol(currentLabel, locCounter, currentOperand) == false) {
                 throw  std::invalid_argument("Symbol" + currentLabel + " was already in SYMTAB.");
             }
         }
@@ -90,7 +90,7 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
         }
         else if (currentOpcode == "EQU") {
             // TODO: Parse equations
-            symTable->insertSymbol(currentLabel, locCounter);
+            symTable->insertSymbol(currentLabel, locCounter, currentOperand);
         }
         else {
             throw  std::invalid_argument("OpCode " + currentOpcode + " was not in OPTAB.");

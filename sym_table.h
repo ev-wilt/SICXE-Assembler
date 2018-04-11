@@ -1,12 +1,11 @@
-#include <map>
+#include <vector>
+#include "symbol.h"
 
 class SymTable {
     public:
-        bool insertSymbol(std::string symbol, int location);
-        int getAddress(std::string symbol);
+        bool insertSymbol(std::string label, int location, std::string value);
     
     private:
-        std::map<std::string, int> symTable = {
-        };
+        std::vector<Symbol> symTable;
     
 };

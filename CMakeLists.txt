@@ -8,4 +8,5 @@ add_executable(
     main.cpp 
     op_table.cpp
     sym_table.cpp
+    symbol.cpp
     )
