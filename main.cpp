@@ -100,9 +100,11 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
         std::cout << std::setfill('0') << std::setw(4) << std::hex << locCounter << std::endl;
 
         lineIter += 3;
-        currentLabel = input[lineIter];
-        currentOpcode = input[lineIter + 1];
-        currentOperand = input[lineIter + 2];
+        if (lineIter < input.size()) {
+	    currentLabel = input[lineIter];
+            currentOpcode = input[lineIter + 1];
+       	    currentOperand = input[lineIter + 2];
+        }
     }
 
     programLength = locCounter - startAddress;
