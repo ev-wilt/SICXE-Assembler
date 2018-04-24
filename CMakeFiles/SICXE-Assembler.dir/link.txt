@@ -1,0 +1,1 @@
+/usr/bin/c++       CMakeFiles/SICXE-Assembler.dir/main.cpp.o CMakeFiles/SICXE-Assembler.dir/op_table.cpp.o CMakeFiles/SICXE-Assembler.dir/sym_table.cpp.o CMakeFiles/SICXE-Assembler.dir/symbol.cpp.o  -o SICXE-Assembler -rdynamic 
