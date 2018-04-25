@@ -9,4 +9,5 @@ add_executable(
     op_table.cpp
     sym_table.cpp
     symbol.cpp
+    registers.cpp
     )

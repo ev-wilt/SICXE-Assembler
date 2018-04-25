@@ -8,6 +8,7 @@
 #include <limits.h>
 #include "op_table.h"
 #include "sym_table.h"
+#include "registers.h"
 
 bool isNum(std::string input) {
     if (input[0] != '#')  {
@@ -25,6 +26,17 @@ bool isNum(std::string input) {
         }
     }
     return true;
+}
+
+std::vector<std::string> parseOperand(std::string operand) {
+    std::vector<std::string> currentOperand;
+    std::string splitOperand;
+    std::stringstream operandStream(operand);
+
+    while (getline(operandStream, splitOperand, ',')) {
+        currentOperand.push_back(splitOperand);
+    }
+    return currentOperand;
 }
 
 /*
@@ -123,7 +135,7 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
 
         lineIter += 3;
         if (lineIter < input.size()) {
-	    currentLabel = input[lineIter];
+	        currentLabel = input[lineIter];
             currentOpcode = input[lineIter + 1];
        	    currentOperand = input[lineIter + 2];
         }
@@ -134,19 +146,20 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
 }
 
 void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable, std::unique_ptr<SymTable>& symTable, int& progLength, int& startAddr) {
+    Registers registers;
     std::string currentLabel = input[0];
     std::string currentOpcode = input[1];
-    std::string currentOperand = input[2];
+    std::string textRecord = "T";
+    std::vector<std::string> currentOperand = parseOperand(input[2]);
     int locCounter = 0;
     int lineIter = 0;
 
     std::cout << "OBJ CODE:" << std::endl;
     if (currentOpcode == "START") {
-        // TODO: Write line to intermediate file
         lineIter += 3;
         currentLabel = input[lineIter];
         currentOpcode = input[lineIter + 1];
-        currentOperand = input[lineIter + 2];
+        currentOperand = parseOperand(input[lineIter + 2]);
     }
 
     // TODO: Write header line
@@ -154,44 +167,77 @@ void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
     std::cout << std::setfill('0') << std::setw(6) << std::hex << startAddr << std::endl;
 
     while (currentOpcode != "END" && lineIter < input.size()) {
+        bool extendedFormat = false;
+        std::stringstream outputStream;
+        std::string objCode = "";
 
-        // Remove X from operand if inderect addressing is used
-        if (currentOperand.substr(currentOperand.size() - 2) == ",X") {
-            currentOperand = currentOperand.substr(0, currentOperand.size() - 2);
+        if (currentOpcode[0] == '+') {
+            currentOpcode = currentOpcode.substr(1);
+            extendedFormat = true;
         }
 
-        
-
         if (opTable->isInOpTable(currentOpcode)) {
-            int symbolIndex = symTable->isInSymTable(currentOperand);
+            for (int i = 0; i < currentOperand.size(); ++i) {
+                int symbolIndex = symTable->isInSymTable(currentOperand[i]);
 
-            if (symbolIndex != INT_MAX) {
-                currentOperand = symTable->getSymbol(symbolIndex).getLocation();
-            }
-            else if (!isNum(currentOperand)) {
-                throw  std::invalid_argument("Operand " + currentOperand + " was not a symbol or a number.");
-            }
-            else {
-                
+                if (symbolIndex != INT_MAX) {
+                    currentOperand[i] = std::to_string(symTable->getSymbol(symbolIndex).getLocation());
+                }
+                else if (!isNum(currentOperand[i]) && !registers.isRegister(currentOperand[i])) {
+                    throw  std::invalid_argument("Operand " + currentOperand[i] + " was not a symbol, a register, or a number.");
+                }
             }
 
             // Assemble object code instruction
+            if (opTable->getFormat(currentOpcode) == 1) {
+                outputStream << std::hex << opTable->getValue(currentOpcode);
+                objCode = outputStream.str();
+            }
+            else if (opTable->getFormat(currentOpcode) == 2) {
+                outputStream << std::hex << opTable->getValue(currentOpcode);
+                for (int i = 0; i < currentOperand.size(); ++i) {
+                    outputStream << currentOperand[i];
+                }
+                if (currentOperand.size() == 1) {
+                    outputStream << "0";
+                }
+                objCode = outputStream.str();   
+            }
+            if (opTable->getFormat(currentOpcode) == 3) {
+                
+
+                if (extendedFormat == true) {
+
+                }
+                objCode = outputStream.str();
+            }
         }
 
         else if (currentOpcode == "WORD" || currentOpcode == "BYTE") {
-            // TODO: Convert constant to object code
+            // Convert constant to object code
+            if (currentOperand[0][0] == 'X') {
+                currentOperand[0] = currentOperand[0].substr(2, currentOperand[0].length() - 2);
+            }
+            if (currentOperand[0][0] == 'C') {
+                std::string character = currentOperand[0].substr(2, currentOperand[0].length() - 2);
+                for (int i = 0; i < character.length(); ++i) {
+                    outputStream << std::hex << int(character[i]);
+                }
+            }
+            else {
+                outputStream << std::hex << std::stoi(currentOperand[0]);
+            }
+            objCode = outputStream.str();
+
         }
-
-
 
         lineIter += 3;
         if (lineIter < input.size()) {
-	    currentLabel = input[lineIter];
+	        currentLabel = input[lineIter];
             currentOpcode = input[lineIter + 1];
-       	    currentOperand = input[lineIter + 2];
+       	    currentOperand = parseOperand(input[lineIter + 2]);
         }
     }
-
 }
 
 int main(int argc, char* argv[]) {
