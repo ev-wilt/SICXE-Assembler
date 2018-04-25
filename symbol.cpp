@@ -1,10 +1,7 @@
 #include "symbol.h"
 
-Symbol::Symbol(std::string label, int location, std::string value) {
-    label = label;
-    location = location;
-    value = value;
-}
+Symbol::Symbol(std::string label, int location, std::string value) :
+    label(label), location(location), value(value) {}
 
 std::string Symbol::getLabel() {
     return label;

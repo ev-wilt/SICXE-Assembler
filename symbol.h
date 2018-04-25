@@ -11,5 +11,5 @@ class Symbol {
         std::string label;
         int location;
         std::string value;
-    
+        
 };

@@ -5,25 +5,42 @@
 #include <sstream>
 #include <memory>
 #include <vector>
+#include <limits.h>
 #include "op_table.h"
 #include "sym_table.h"
+
+bool isNum(std::string input) {
+    if (input[0] != '#')  {
+        for (int i = 0; i < input.length(); ++i) {
+            if (!isdigit(input[i])) {
+                return false;
+            }
+        }        
+    }
+    else {
+        for (int i = 1; i < input.length(); ++i) {
+            if (!isdigit(input[i])) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
 
 /*
     Implementation of the first pass algorithm. 
 */
-void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable, std::unique_ptr<SymTable>& symTable) {
+void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable, std::unique_ptr<SymTable>& symTable, int& progLength, int& startAddr) {
     std::string currentLabel = input[0];
     std::string currentOpcode = input[1];
     std::string currentOperand = input[2];
     int locCounter = 0;
-    int programLength = 0;
-    int startAddress = 0;
     int lineIter = 0;
 
     std::cout << "LOCCTR:" << std::endl;
     if (currentOpcode == "START") {
         locCounter = std::stoi(currentOperand, nullptr, 16);
-        startAddress = locCounter;
+        startAddr = locCounter;
         // TODO: Write line to intermediate file
         std::cout << std::setfill('0') << std::setw(4) << std::hex << locCounter << std::endl;
         lineIter += 3;
@@ -33,6 +50,11 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
     }
 
     while (currentOpcode != "END" && lineIter < input.size()) {
+
+        // Remove X from operand if inderect addressing is used
+        if (currentOperand.substr(currentOperand.size() - 2) == ",X") {
+            currentOperand = currentOperand.substr(0, currentOperand.size() - 2);
+        }
 
         if (currentLabel != "") {
             if (symTable->insertSymbol(currentLabel, locCounter, currentOperand) == false) {
@@ -107,8 +129,69 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
         }
     }
 
-    programLength = locCounter - startAddress;
-    std::cout << "Program Length: " << std::setfill('0') << std::setw(4) << std::hex << programLength << std::endl;
+    progLength = locCounter - startAddr;
+    std::cout << "Program Length: " << std::setfill('0') << std::setw(4) << std::hex << progLength << std::endl;
+}
+
+void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable, std::unique_ptr<SymTable>& symTable, int& progLength, int& startAddr) {
+    std::string currentLabel = input[0];
+    std::string currentOpcode = input[1];
+    std::string currentOperand = input[2];
+    int locCounter = 0;
+    int lineIter = 0;
+
+    std::cout << "OBJ CODE:" << std::endl;
+    if (currentOpcode == "START") {
+        // TODO: Write line to intermediate file
+        lineIter += 3;
+        currentLabel = input[lineIter];
+        currentOpcode = input[lineIter + 1];
+        currentOperand = input[lineIter + 2];
+    }
+
+    // TODO: Write header line
+    std:: cout << "HCOPY" << " " << std::setfill('0') << std::setw(6) << std::hex << progLength;
+    std::cout << std::setfill('0') << std::setw(6) << std::hex << startAddr << std::endl;
+
+    while (currentOpcode != "END" && lineIter < input.size()) {
+
+        // Remove X from operand if inderect addressing is used
+        if (currentOperand.substr(currentOperand.size() - 2) == ",X") {
+            currentOperand = currentOperand.substr(0, currentOperand.size() - 2);
+        }
+
+        
+
+        if (opTable->isInOpTable(currentOpcode)) {
+            int symbolIndex = symTable->isInSymTable(currentOperand);
+
+            if (symbolIndex != INT_MAX) {
+                currentOperand = symTable->getSymbol(symbolIndex).getLocation();
+            }
+            else if (!isNum(currentOperand)) {
+                throw  std::invalid_argument("Operand " + currentOperand + " was not a symbol or a number.");
+            }
+            else {
+                
+            }
+
+            // Assemble object code instruction
+        }
+
+        else if (currentOpcode == "WORD" || currentOpcode == "BYTE") {
+            // TODO: Convert constant to object code
+        }
+
+
+
+        lineIter += 3;
+        if (lineIter < input.size()) {
+	    currentLabel = input[lineIter];
+            currentOpcode = input[lineIter + 1];
+       	    currentOperand = input[lineIter + 2];
+        }
+    }
+
 }
 
 int main(int argc, char* argv[]) {
@@ -138,7 +221,10 @@ int main(int argc, char* argv[]) {
 
             std::unique_ptr<OpTable> optTable (new OpTable);
             std::unique_ptr<SymTable> symTable (new SymTable);
-            passOne(inputVector, optTable, symTable);
+            int progLength = 0;
+            int startAddr = 0;
+            passOne(inputVector, optTable, symTable, progLength, startAddr);
+            passTwo(inputVector, optTable, symTable, progLength, startAddr);
         }
 
         else {
