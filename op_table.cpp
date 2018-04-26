@@ -26,11 +26,3 @@ int OpTable::getOpcode(std::string mnemonic) {
 int OpTable::getFormat(std::string mnemonic) {
     return opTable.find(mnemonic)->second.second;
 }
-
-/*
-    Getter for the value of a given mnemonic.
-    Returns: Value
-*/
-int OpTable::getValue(std::string mnemonic) {
-    return opTable.find(mnemonic)->second.first;
-}

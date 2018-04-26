@@ -5,7 +5,6 @@ class OpTable {
         bool isInOpTable(std::string mnemonic);
         int getOpcode(std::string mnemonic);
         int getFormat(std::string mnemonic);
-        int getValue(std::string mnemonic);
 
     private:
         const std::map<std::string, std::pair <int, int> > opTable = {

@@ -190,13 +190,13 @@ void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
 
             // Assemble object code instruction
             if (opTable->getFormat(currentOpcode) == 1) {
-                outputStream << std::hex << opTable->getValue(currentOpcode);
+                outputStream << std::hex << opTable->getOpcode(currentOpcode);
                 objCode = outputStream.str();
             }
             else if (opTable->getFormat(currentOpcode) == 2) {
-                outputStream << std::hex << opTable->getValue(currentOpcode);
+                outputStream << std::hex << opTable->getOpcode(currentOpcode);
                 for (int i = 0; i < currentOperand.size(); ++i) {
-                    outputStream << currentOperand[i];
+                    outputStream << std::to_string(registers.getRegister(currentOperand[i]).getLocation());
                 }
                 if (currentOperand.size() == 1) {
                     outputStream << "0";
@@ -204,11 +204,43 @@ void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
                 objCode = outputStream.str();   
             }
             if (opTable->getFormat(currentOpcode) == 3) {
-                
+                int opPlusNI = opTable->getOpcode(currentOpcode);
 
-                if (extendedFormat == true) {
-
+                // n and i bits
+                if (currentOperand[0][0] = '@') {
+                    opPlusNI += 0x10;
                 }
+                if (currentOperand[0][0] = '#') {
+                    opPlusNI += 0x01;
+                    currentOperand[0] = currentOperand[0].substr(1);
+                }
+                else {
+                    opPlusNI += 0x11;
+                }
+                outputStream << std::hex << opPlusNI;
+
+                // x bit
+                if (currentOperand[currentOperand.size() - 1] == "X") {
+                    outputStream << "1";
+                }
+                else {
+                    outputStream << "0";
+                }
+
+                // b and p bits
+                outputStream << "00";
+
+                // e bit
+                if (extendedFormat == true) {
+                    outputStream << "1";
+                }
+                else {
+                    outputStream << "0";
+                }
+
+                // disp/address bits
+                outputStream << std::hex << std::stoi(currentOperand[0]);
+
                 objCode = outputStream.str();
             }
         }
@@ -238,6 +270,9 @@ void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
        	    currentOperand = parseOperand(input[lineIter + 2]);
         }
     }
+
+    // TODO: Write last text record
+    // TODO: Write end record
 }
 
 int main(int argc, char* argv[]) {
