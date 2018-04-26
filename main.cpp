@@ -204,44 +204,44 @@ void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
                 objCode = outputStream.str();   
             }
             if (opTable->getFormat(currentOpcode) == 3) {
-                int opPlusNI = opTable->getOpcode(currentOpcode);
+                int firstSixBits = opTable->getOpcode(currentOpcode);
 
                 // n and i bits
                 if (currentOperand[0][0] = '@') {
-                    opPlusNI += 0x10;
+                    firstSixBits += 0x2;
                 }
                 if (currentOperand[0][0] = '#') {
-                    opPlusNI += 0x01;
+                    firstSixBits += 0x1;
                     currentOperand[0] = currentOperand[0].substr(1);
                 }
                 else {
-                    opPlusNI += 0x11;
+                    firstSixBits += 0x3;
                 }
-                outputStream << std::hex << opPlusNI;
+                outputStream << std::setfill('0') << std::setw(2) << std::hex << firstSixBits;
 
                 // x bit
+                int nextFourBits = 0x0;
                 if (currentOperand[currentOperand.size() - 1] == "X") {
-                    outputStream << "1";
-                }
-                else {
-                    outputStream << "0";
+                    nextFourBits += 0x8;
                 }
 
-                // b and p bits
-                outputStream << "00";
+                // b and p bits would go here
 
                 // e bit
                 if (extendedFormat == true) {
-                    outputStream << "1";
+                    nextFourBits += 0x1;
                 }
-                else {
-                    outputStream << "0";
-                }
+                outputStream << std::hex << nextFourBits;
 
                 // disp/address bits
-                outputStream << std::hex << std::stoi(currentOperand[0]);
-
+                if (extendedFormat == true) {
+                    outputStream << std::setfill('0') << std::setw(6) << std::hex << stoi(currentOperand[0]);
+                }
+                else {
+                    outputStream << std::setfill('0') << std::setw(3) << std::hex << stoi(currentOperand[0]);
+                }
                 objCode = outputStream.str();
+                std::cout << objCode << std::endl;
             }
         }
 
