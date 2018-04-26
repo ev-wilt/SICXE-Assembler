@@ -1,3 +1,6 @@
+#ifndef SYMBOL_H
+#define SYMBOL_H
+
 #include <string>
 
 class Symbol {
@@ -11,5 +14,7 @@ class Symbol {
         std::string label;
         int location;
         std::string value;
-    
+        
 };
+
+#endif

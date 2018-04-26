@@ -5,28 +5,57 @@
 #include <sstream>
 #include <memory>
 #include <vector>
+#include <limits.h>
 #include "op_table.h"
 #include "sym_table.h"
+#include "registers.h"
+
+bool isNum(std::string input) {
+    if (input[0] != '#')  {
+        for (int i = 0; i < input.length(); ++i) {
+            if (!isdigit(input[i])) {
+                return false;
+            }
+        }        
+    }
+    else {
+        for (int i = 1; i < input.length(); ++i) {
+            if (!isdigit(input[i])) {
+                return false;
+            }
+        }
+    }
+    return true;
+}
+
+std::vector<std::string> parseOperand(std::string operand) {
+    std::vector<std::string> currentOperand;
+    std::string splitOperand;
+    std::stringstream operandStream(operand);
+
+    while (getline(operandStream, splitOperand, ',')) {
+        currentOperand.push_back(splitOperand);
+    }
+    return currentOperand;
+}
 
 /*
     Implementation of the first pass algorithm. 
 */
-void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable, std::unique_ptr<SymTable>& symTable) {
-	std::cout << "Starting Pass 1!" << std::endl;
-    std::string currentLabel = input[0];
+void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable, std::unique_ptr<SymTable>& symTable, int& progLength, int& startAddr) {
+    std::cout << "Starting Pass 1!" << std::endl;
+	std::string currentLabel = input[0];
     std::string currentOpcode = input[1];
     std::string currentOperand = input[2];
     int locCounter = 0;
-    int programLength = 0;
-    int startAddress = 0;
     int lineIter = 0;
 
     std::cout << "LOCCTR Label    Opcode  Operand   HexCode" << std::endl;
-    if (currentOpcode == "START") {
+	if (currentOpcode == "START") {
         locCounter = std::stoi(currentOperand, nullptr, 16);
-        startAddress = locCounter;
+        startAddr = locCounter;
         // TODO: Write line to intermediate file
-       // std::cout << std::setfill('0') << std::setw(4) << std::hex << locCounter << std::endl;
+//        std::cout << std::setfill('0') << std::setw(4) << std::hex << locCounter << std::endl;
         lineIter += 3;
         currentLabel = input[lineIter];
         currentOpcode = input[lineIter + 1];
@@ -35,6 +64,11 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
 
     while (currentOpcode != "END" && lineIter < input.size()) {
 		std::cout << std::setfill('0') << std::setw(4) << std::hex << locCounter << "\t" << currentLabel << "\t"  <<currentOpcode << "\t" << currentOperand << std::endl;
+        // Remove X from operand if inderect addressing is used
+        if (currentOperand.substr(currentOperand.size() - 2) == ",X") {
+            currentOperand = currentOperand.substr(0, currentOperand.size() - 2);
+        }
+
         if (currentLabel != "") {
             if (symTable->insertSymbol(currentLabel, locCounter, currentOperand) == false) {
                 throw  std::invalid_argument("Symbol" + currentLabel + " was already in SYMTAB.");
@@ -96,10 +130,9 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
         else {
             throw  std::invalid_argument("OpCode " + currentOpcode + " was not in OPTAB.");
         }
-        // TODO: Write line to intermediate file
         lineIter += 3;
         if (lineIter < input.size()) {
-			currentLabel = input[lineIter];
+	        currentLabel = input[lineIter];
             currentOpcode = input[lineIter + 1];
        	    currentOperand = input[lineIter + 2];
         }
@@ -108,13 +141,142 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
 		std::cout << std::setfill('0') << std::setw(4) << std::hex << locCounter << "\t" << currentLabel << "\t"  <<currentOpcode << "\t" << currentOperand << std::endl;
 	}
 
-    programLength = locCounter - startAddress;
-    std::cout << "Program Length: " << std::setfill('0') << std::setw(4) << std::hex << programLength << std::endl;
+    progLength = locCounter - startAddr;
+    std::cout << "Program Length: " << std::setfill('0') << std::setw(4) << std::hex << progLength << std::endl;
     std::cout << "End of Pass 1 Success!" << std::endl;
 }
 
-void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable, std::unique_ptr<SymTable>& symTable) {
+void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable, std::unique_ptr<SymTable>& symTable, int& progLength, int& startAddr) {
 	std::cout << "Starting Pass 2!" << std::endl;
+    Registers registers;
+    std::string currentLabel = input[0];
+    std::string currentOpcode = input[1];
+    std::string textRecord = "T";
+    std::vector<std::string> currentOperand = parseOperand(input[2]);
+    int locCounter = 0;
+    int lineIter = 0;
+
+    std::cout << "OBJ CODE:" << std::endl;
+    if (currentOpcode == "START") {
+        lineIter += 3;
+        currentLabel = input[lineIter];
+        currentOpcode = input[lineIter + 1];
+        currentOperand = parseOperand(input[lineIter + 2]);
+    }
+
+    // TODO: Write header line
+    std:: cout << "HCOPY" << " " << std::setfill('0') << std::setw(6) << std::hex << progLength;
+    std::cout << std::setfill('0') << std::setw(6) << std::hex << startAddr << std::endl;
+
+    while (currentOpcode != "END" && lineIter < input.size()) {
+        bool extendedFormat = false;
+        std::stringstream outputStream;
+        std::string objCode = "";
+
+        if (currentOpcode[0] == '+') {
+            currentOpcode = currentOpcode.substr(1);
+            extendedFormat = true;
+        }
+
+        if (opTable->isInOpTable(currentOpcode)) {
+            for (int i = 0; i < currentOperand.size(); ++i) {
+                int symbolIndex = symTable->isInSymTable(currentOperand[i]);
+
+                if (symbolIndex != INT_MAX) {
+                    currentOperand[i] = std::to_string(symTable->getSymbol(symbolIndex).getLocation());
+                }
+                else if (!isNum(currentOperand[i]) && !registers.isRegister(currentOperand[i])) {
+                    throw  std::invalid_argument("Operand " + currentOperand[i] + " was not a symbol, a register, or a number.");
+                }
+            }
+
+            // Assemble object code instruction
+            if (opTable->getFormat(currentOpcode) == 1) {
+                outputStream << std::hex << opTable->getOpcode(currentOpcode);
+                objCode = outputStream.str();
+            }
+            else if (opTable->getFormat(currentOpcode) == 2) {
+                outputStream << std::hex << opTable->getOpcode(currentOpcode);
+                for (int i = 0; i < currentOperand.size(); ++i) {
+                    outputStream << std::to_string(registers.getRegister(currentOperand[i]).getLocation());
+                }
+                if (currentOperand.size() == 1) {
+                    outputStream << "0";
+                }
+                objCode = outputStream.str();   
+            }
+            if (opTable->getFormat(currentOpcode) == 3) {
+                int firstSixBits = opTable->getOpcode(currentOpcode);
+
+                // n and i bits
+                if (currentOperand[0][0] = '@') {
+                    firstSixBits += 0x2;
+                }
+                if (currentOperand[0][0] = '#') {
+                    firstSixBits += 0x1;
+                    currentOperand[0] = currentOperand[0].substr(1);
+                }
+                else {
+                    firstSixBits += 0x3;
+                }
+                outputStream << std::setfill('0') << std::setw(2) << std::hex << firstSixBits;
+
+                // x bit
+                int nextFourBits = 0x0;
+                if (currentOperand[currentOperand.size() - 1] == "X") {
+                    nextFourBits += 0x8;
+                }
+
+                // b and p bits would go here
+
+                // e bit
+                if (extendedFormat == true) {
+                    nextFourBits += 0x1;
+                }
+                outputStream << std::hex << nextFourBits;
+
+                // disp/address bits
+                if (extendedFormat == true) {
+                    outputStream << std::setfill('0') << std::setw(6) << std::hex << std::stoi(currentOperand[0]);
+                }
+                else {
+					//line produced error on basic.txt
+                    outputStream << std::setfill('0') << std::setw(3) << std::hex << std::stoi(currentOperand[0]);
+                }
+                objCode = outputStream.str();
+                std::cout << objCode << std::endl;
+            }
+        }
+
+        else if (currentOpcode == "WORD" || currentOpcode == "BYTE") {
+            // Convert constant to object code
+            if (currentOperand[0][0] == 'X') {
+                currentOperand[0] = currentOperand[0].substr(2, currentOperand[0].length() - 2);
+            }
+            if (currentOperand[0][0] == 'C') {
+                std::string character = currentOperand[0].substr(2, currentOperand[0].length() - 2);
+                for (int i = 0; i < character.length(); ++i) {
+                    outputStream << std::hex << int(character[i]);
+                }
+            }
+            else {
+                outputStream << std::hex << std::stoi(currentOperand[0]);
+            }
+            objCode = outputStream.str();
+
+        }
+
+        lineIter += 3;
+        if (lineIter < input.size()) {
+	        currentLabel = input[lineIter];
+            currentOpcode = input[lineIter + 1];
+       	    currentOperand = parseOperand(input[lineIter + 2]);
+        }
+    }
+
+    // TODO: Write last text record
+    // TODO: Write end record
+	std:: cout << "E" << std::setfill('0') << std::setw(6) << std::hex << startAddr;
 	std::cout << "End of Pass 2!" << std::endl;
 }
 
@@ -145,8 +307,10 @@ int main(int argc, char* argv[]) {
 
             std::unique_ptr<OpTable> optTable (new OpTable);
             std::unique_ptr<SymTable> symTable (new SymTable);
-            passOne(inputVector, optTable, symTable);
-			passTwo(inputVector, optTable, symTable);
+            int progLength = 0;
+            int startAddr = 0;
+            passOne(inputVector, optTable, symTable, progLength, startAddr);
+            passTwo(inputVector, optTable, symTable, progLength, startAddr);
         }
 
         else {
