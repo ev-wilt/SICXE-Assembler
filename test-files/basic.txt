@@ -1,3 +1,4 @@
+	START	0
 	LDS	#3	.Initialize Register S to 3
 	LDT	#300	.Initialize Register T to 300
 	LDX	#0	.Initialize Index Register to 0
