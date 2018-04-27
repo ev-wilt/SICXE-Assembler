@@ -154,7 +154,7 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
         std::cout << std::setfill('0') << std::setw(4) << std::hex << locCounter << std::endl;
 
         lineIter += 3;
-        if (recordCounter > 60) {
+        if (recordCounter >= 60) {
             recordStarts.push_back(locCounter);
             recordCounter = 0;
         }
@@ -290,7 +290,7 @@ void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
 
         lineIter += 3;
         textRecord += objCode;
-        if (textRecord.length() > 60) {
+        if (textRecord.length() >= 60) {
             std::stringstream startAndLength;
             startAndLength << std::setfill('0') << std::setw(6) << std::hex << recordStarts[recordIter];
             startAndLength << std::setfill('0') << std::setw(3) << std::hex << textRecord.length();
@@ -310,7 +310,9 @@ void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
     startAndLength << std::setfill('0') << std::setw(3) << std::hex << textRecord.length();
     textRecord = "T" + startAndLength.str() + textRecord;
     std::cout << textRecord << std::endl;
-    // TODO: Write end record
+    // Write end record
+	std:: cout << "E" << std::setfill('0') << std::setw(6) << std::hex << recordStarts[0] << std::endl;
+
 }
 
 int main(int argc, char* argv[]) {
