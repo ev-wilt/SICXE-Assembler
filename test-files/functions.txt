@@ -1,6 +1,6 @@
 COPY	START	0	.copy the file form INPUT to OUTPUT
 FIRST	STL	RETADR	.Save Return address
-	LDB	#LENGTH	.establish base register
+	LDB	LENGTH	.establish base register
 	BASE	LENGTH	
 CLOOP	+JSUB	RDREC	.Read INPUT Record
 	LDA	LENGTH	.Test for EOF (Length = 0)
