@@ -64,7 +64,7 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
     while (currentOpcode != "END" && lineIter < input.size()) {
 
         // Remove X from operand if inderect addressing is used
-        if (currentOperand.substr(currentOperand.size() - 2) == ",X") {
+        if (currentOperand.size() > 1 && currentOperand.substr(currentOperand.size() - 2) == ",X") {
             currentOperand = currentOperand.substr(0, currentOperand.size() - 2);
         }
 
@@ -149,7 +149,8 @@ void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
     Registers registers;
     std::string currentLabel = input[0];
     std::string currentOpcode = input[1];
-    std::string textRecord = "T";
+    std::string textRecord = "";
+    std::string textAddress = "";
     std::vector<std::string> currentOperand = parseOperand(input[2]);
     int locCounter = 0;
     int lineIter = 0;
@@ -179,22 +180,22 @@ void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
         if (opTable->isInOpTable(currentOpcode)) {
             for (int i = 0; i < currentOperand.size(); ++i) {
                 int symbolIndex = symTable->isInSymTable(currentOperand[i]);
-
                 if (symbolIndex != INT_MAX) {
                     currentOperand[i] = std::to_string(symTable->getSymbol(symbolIndex).getLocation());
                 }
                 else if (!isNum(currentOperand[i]) && !registers.isRegister(currentOperand[i])) {
                     throw  std::invalid_argument("Operand " + currentOperand[i] + " was not a symbol, a register, or a number.");
                 }
+
             }
 
             // Assemble object code instruction
             if (opTable->getFormat(currentOpcode) == 1) {
-                outputStream << std::hex << opTable->getOpcode(currentOpcode);
+                outputStream << std::setfill('0') << std::setw(2) << std::hex << opTable->getOpcode(currentOpcode);
                 objCode = outputStream.str();
             }
             else if (opTable->getFormat(currentOpcode) == 2) {
-                outputStream << std::hex << opTable->getOpcode(currentOpcode);
+                outputStream << std::setfill('0') << std::setw(2) << std::hex << opTable->getOpcode(currentOpcode);
                 for (int i = 0; i < currentOperand.size(); ++i) {
                     outputStream << std::to_string(registers.getRegister(currentOperand[i]).getLocation());
                 }
@@ -203,14 +204,14 @@ void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
                 }
                 objCode = outputStream.str();   
             }
-            if (opTable->getFormat(currentOpcode) == 3) {
+            else if (opTable->getFormat(currentOpcode) == 3) {
                 int firstSixBits = opTable->getOpcode(currentOpcode);
 
                 // n and i bits
-                if (currentOperand[0][0] = '@') {
+                if (currentOperand[0][0] == '@') {
                     firstSixBits += 0x2;
                 }
-                if (currentOperand[0][0] = '#') {
+                if (currentOperand[0][0] == '#') {
                     firstSixBits += 0x1;
                     currentOperand[0] = currentOperand[0].substr(1);
                 }
@@ -235,13 +236,12 @@ void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
 
                 // disp/address bits
                 if (extendedFormat == true) {
-                    outputStream << std::setfill('0') << std::setw(6) << std::hex << stoi(currentOperand[0]);
+                    outputStream << std::setfill('0') << std::setw(6) << std::hex << std::stoi(currentOperand[0]);
                 }
                 else {
-                    outputStream << std::setfill('0') << std::setw(3) << std::hex << stoi(currentOperand[0]);
+                    outputStream << std::setfill('0') << std::setw(3) << std::hex << std::stoi(currentOperand[0]);
                 }
                 objCode = outputStream.str();
-                std::cout << objCode << std::endl;
             }
         }
 
@@ -264,14 +264,24 @@ void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
         }
 
         lineIter += 3;
+        textRecord += objCode;
+        if (textRecord.length() > 60) {
+            std::stringstream recordLength;
+            recordLength << std::setfill('0') << std::setw(3) << std::hex << textRecord.length();
+            textRecord = "T" + recordLength.str() + textRecord;
+            std::cout << textRecord << std::endl;
+            textRecord = "";
+        }
         if (lineIter < input.size()) {
 	        currentLabel = input[lineIter];
             currentOpcode = input[lineIter + 1];
        	    currentOperand = parseOperand(input[lineIter + 2]);
         }
     }
-
-    // TODO: Write last text record
+    std::stringstream recordLength;
+    recordLength << std::setfill('0') << std::setw(3) << std::hex << textRecord.length();
+    textRecord = "T" + recordLength.str() + textRecord;
+    std::cout << textRecord << std::endl;
     // TODO: Write end record
 }
 
@@ -305,6 +315,9 @@ int main(int argc, char* argv[]) {
             int progLength = 0;
             int startAddr = 0;
             passOne(inputVector, optTable, symTable, progLength, startAddr);
+            // for (int i = 0; i < 4; ++i) {
+            //     std::cout << symTable->getSymbol(i).getLabel() << "\t" << symTable->getSymbol(i).getLocation() << "\t" << symTable->getSymbol(i).getValue() << std::endl;
+            // }
             passTwo(inputVector, optTable, symTable, progLength, startAddr);
         }
 
