@@ -42,6 +42,8 @@ std::vector<std::string> parseOperand(std::string operand) {
     Implementation of the first pass algorithm. 
 */
 void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable, std::unique_ptr<SymTable>& symTable, int& progLength, std::vector<int>& recordStarts) {
+    std::ofstream output;
+    output.open("intermediate.txt");
     std::string currentLabel = input[0];
     std::string currentOpcode = input[1];
     std::string currentOperand = input[2];
@@ -49,14 +51,13 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
     int recordCounter = 0;
     int lineIter = 0;
 
-    std::cout << "LOCCTR:" << std::endl;
+    output << "LOCCTR:" << std::endl;
     
     // Start algorithm when START is found
     if (currentOpcode == "START") {
         locCounter = std::stoi(currentOperand, nullptr, 16);
         recordStarts.push_back(locCounter);
-        // TODO: Write line to intermediate file
-        std::cout << std::setfill('0') << std::setw(4) << std::hex << locCounter << std::endl;
+        output << std::setfill('0') << std::setw(4) << std::hex << locCounter << std::endl;
         lineIter += 3;
         currentLabel = input[lineIter];
         currentOpcode = input[lineIter + 1];
@@ -156,8 +157,7 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
             }
         }
 
-        // TODO: Write line to intermediate file
-        std::cout << std::setfill('0') << std::setw(4) << std::hex << locCounter << std::endl;
+        output << std::setfill('0') << std::setw(4) << std::hex << locCounter << std::endl;
 
         lineIter += 3;
         
@@ -173,9 +173,13 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
         }
     }
 
+    // Write last instruction location
+    output << std::setfill('0') << std::setw(4) << std::hex << locCounter << std::endl;
+
     // Save and write program length
     progLength = locCounter - recordStarts[0];
-    std::cout << "Program Length: " << std::setfill('0') << std::setw(4) << std::hex << progLength << std::endl;
+    output << "Program Length: " << std::setfill('0') << std::setw(4) << std::hex << progLength << std::endl;
+    output.close();
 }
 
 /*
@@ -183,6 +187,8 @@ void passOne(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
 */
 void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable, std::unique_ptr<SymTable>& symTable, int& progLength, std::vector<int>& recordStarts) {
     Registers registers;
+    std::ofstream output;
+    output.open("object.txt");
     std::string currentLabel = input[0];
     std::string currentOpcode = input[1];
     std::string textRecord = "";
@@ -191,8 +197,6 @@ void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
     int locCounter = 0;
     int lineIter = 0;
     int recordIter = 0;
-
-    std::cout << "OBJ CODE:" << std::endl;
 
     // Start algorith at START
     if (currentOpcode == "START") {
@@ -203,8 +207,8 @@ void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
     }
 
     // Write header record
-    std:: cout << "HCOPY" << " " << std::setfill('0') << std::setw(6) << std::hex << recordStarts[0];
-    std::cout << std::setfill('0') << std::setw(6) << std::hex << progLength << std::endl;
+    output << "HCOPY" << " " << std::setfill('0') << std::setw(6) << std::hex << recordStarts[0];
+    output << std::setfill('0') << std::setw(6) << std::hex << progLength << std::endl;
 
     // Continue while not END and there's still more input
     while (currentOpcode != "END" && lineIter < input.size()) {
@@ -331,7 +335,7 @@ void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
             startAndLength << std::setfill('0') << std::setw(6) << std::hex << recordStarts[recordIter];
             startAndLength << std::setfill('0') << std::setw(3) << std::hex << textRecord.length();
             textRecord = "T" + startAndLength.str() + textRecord;
-            std::cout << textRecord << std::endl;
+            output << textRecord << std::endl;
             textRecord = "";
             ++recordIter;
         }
@@ -347,10 +351,11 @@ void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
     startAndLength << std::setfill('0') << std::setw(6) << std::hex << recordStarts[recordIter];
     startAndLength << std::setfill('0') << std::setw(3) << std::hex << textRecord.length();
     textRecord = "T" + startAndLength.str() + textRecord;
-    std::cout << textRecord << std::endl;
+    output << textRecord << std::endl;
 
     // Write end record
-	std:: cout << "E" << std::setfill('0') << std::setw(6) << std::hex << recordStarts[0] << std::endl;
+	output << "E" << std::setfill('0') << std::setw(6) << std::hex << recordStarts[0] << std::endl;
+    output.close();
 }
 
 int main(int argc, char* argv[]) {
