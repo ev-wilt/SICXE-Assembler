@@ -354,7 +354,7 @@ void passTwo(std::vector<std::string>& input, std::unique_ptr<OpTable>& opTable,
     output << textRecord << std::endl;
 
     // Write end record
-	output << "E" << std::setfill('0') << std::setw(6) << std::hex << recordStarts[0] << std::endl;
+    output << "E" << std::setfill('0') << std::setw(6) << std::hex << recordStarts[0] << std::endl;
     output.close();
 }
 
